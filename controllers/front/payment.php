@@ -18,73 +18,64 @@ class VPOSIntegrationPaymentModuleFrontController extends
     return false;
   }
 
+  private function requestVPOSPlugin() {
+    //Componentes de Seguridad
+    //Vector Hexadecimal
+    $vector = Configuration::get('VPOSI_VECTOR');
+
+    //Llave Publica Crypto de Alignet. Nota olvidar ingresar los saltos de linea detallados con el valor \n
+    $llaveVPOSCryptoPub = Configuration::get('VPOSI_ENC_PUB_KEY');
+
+    //Llave Firma Privada del Comercio. Nota olvidar ingresar los saltos de linea detallados con el valor \n
+    $llaveComercioFirmaPriv = Configuration::get('VPOSI_SIGN_PRIV_KEY');
+
+    $address = new Address($this->context->cart->id_address_delivery);
+
+    $state = new State($address->id_state);
+
+    //Envío de Parametros a V-POS
+    $array_send['acquirerId'] = Configuration::get('VPOSI_ID_ACQUIRER');
+    $array_send['commerceId']= Configuration::get('VPOSI_ID_COMMERCE');
+    $array_send['purchaseOperationNumber']= $this->context->cart->id;
+    $array_send['purchaseAmount'] = $this->context->cart->getOrderTotal(true, Cart::BOTH);
+    $array_send['purchaseCurrencyCode'] = $this->context->cart->id_currency;
+    $array_send['commerceMallId'] = Configuration::get('VPOSI_ID_MALL');
+    $array_send['language'] = 'SP';
+    $array_send['billingFirstName'] = $address->firstname;
+    $array_send['billingLastName'] = $address->lastname;;
+    $array_send['billingEMail'] = $this->context->customer->email;
+    $array_send['billingAddress'] = $address->address1.', '.$address->address2;
+    $array_send['billingZIP'] = $address->postcode;
+    $array_send['billingCity'] = $address->city;
+    $array_send['billingState'] = $state->name;
+    $array_send['billingCountry'] = $address->country;
+    $array_send['billingPhone'] = $address->phone;
+    $array_send['shippingAddress'] = $address->address1.', '.$address->address2;
+    $array_send['terminalCode'] = Configuration::get('VPOSI_TERMINAL_CODE');
+
+    //Ejemplo envío campos reservados en parametro reserved1.
+    // $array_send['reserved1']='Valor Reservado 123';
+
+    //Parametros de Solicitud de Autorización a Enviar
+    $array_get['XMLREQ'] = "";
+    $array_get['DIGITALSIGN'] = "";
+    $array_get['SESSIONKEY'] = "";
+
+    //Ejecución de Creación de Valores para la Solicitud de Autorización
+    VPOSSend($array_send,$array_get,$llaveVPOSCryptoPub,$llaveComercioFirmaPriv,$vector);
+
+    return $array_get;
+  }
+
   public function initContent() {
     parent::initContent();
 
     $this->setTemplate('payment.tpl');
 
-    //Componentes de Seguridad
-    //Vector Hexadecimal
-    $vector = "0000000000000000";
+    $array_get = $this->requestVPOSPlugin();
 
-    //Llave Publica Crypto de Alignet. Nota olvidar ingresar los saltos de linea detallados con el valor \n
-    $llaveVPOSCryptoPub = "-----BEGIN PUBLIC KEY-----\n".
-    "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDTJt+hUZiShEKFfs7DShsXCkoq\n".
-    "TEjv0SFkTM04qHyHFU90Da8Ep1F0gI2SFpCkLmQtsXKOrLrQTF0100dL/gDQlLt0\n".
-    "Ut8kM/PRLEM5thMPqtPq6G1GTjqmcsPzUUL18+tYwN3xFi4XBog4Hdv0ml1SRkVO\n".
-    "DRr1jPeilfsiFwiO8wIDAQAB\n".
-    "-----END PUBLIC KEY-----";
-
-    //Llave Firma Privada del Comercio. Nota olvidar ingresar los saltos de linea detallados con el valor \n
-    $llaveComercioFirmaPriv = "-----BEGIN RSA PRIVATE KEY-----\n".
-    "MIICWwIBAAKBgQC8QQR8UNPY3q7j/24RM+yOwB3qNAHxRGIcFeT681dnN4fZwc51\n".
-    "K3CKN0m6ZWuOO2Zra2d1ePdm/yCDFL0A2Zn60hRDDDwUQBrP0wuQhV5QVllkGLX8\n".
-    "A55rNpskJHck0hExSI40J9wO1RGyZdSIczqHAEtQByXmg/rS0mtydpeilQIDAQAV\n".
-    "AoGAcfxPkvyt9Z+J+0qCf7rmvHCrYGFkB/rxjo4ZLmZA1vSiOPeUSxGNE0R0DF6V\n".
-    "6LOnheXrp3Pt5mA0vtESa1b9/WjDxPkaUA9t39qLjJtzU5sbcvkbFlBfrGonr50/\n".
-    "RUd+VQhGBj3gTEEyxPc0+C0bdrhvIh2QpZuSkVNbpWl+Zf0CQQDPYSjj6Qs3lGfV\n".
-    "JewxN6zvlkMiRIC/2KpRCoURchlYp18zX/kNQ+DTV1WrgJpogHo6eIopkT89DzXy\n".
-    "NOC63Cr9AkEA6GPzAiOzwptawiJoPy1bqmiAUApiqMEloIQKIQvBa/2zjnFk9SQH\n".
-    "hUfiuS9JrXLtQPPPthqTyuXBKhmgBk/leQJAS/iPaEFJEU+mxB3fKnq6/jVmGJ61\n".
-    "aWvwDyFtJYCMXkkZk+p5ODrTACNuLN9iQlwjO6lnO+OgUGmKTHm6nirU/QJAHBNG\n".
-    "mUedqWXA7wJtRivJrFzdY4MXi1ZpZXCivATvSFwJVkLAqZIhq+hF6IUUDMEHtmeA\n".
-    "bIjvALoUxFJeBQzdvQJAfleoHn4tQJxDasHtdf08udZEEGL7N7IAwXqiwBX6UZS8\n".
-    "pO+3Xot8dhviD8KLH7B+m7AjfhGuEaCaDYBIB/8Ubw==\n".
-    "-----END RSA PRIVATE KEY-----";
-
-    //Envío de Parametros a V-POS
-    $array_send['acquirerId']='99';
-    $array_send['commerceId']='7627';
-    $array_send['purchaseOperationNumber']='90100100105';
-    $array_send['purchaseAmount']='10000';
-    $array_send['purchaseCurrencyCode']='840';
-    $array_send['commerceMallId']='1';
-    $array_send['language']='SP';
-    $array_send['billingFirstName']='Juan';
-    $array_send['billingLastName']='Perez';
-    $array_send['billingEMail']='test@test.com';
-    $array_send['billingAddress']='Direccion ABC';
-    $array_send['billingZIP']='1234567890';
-    $array_send['billingCity']='San Jose';
-    $array_send['billingState']='San Jose';
-    $array_send['billingCountry']='CR';
-    $array_send['billingPhone']='123456789';
-    $array_send['shippingAddress']='Direccion ABC';
-    $array_send['terminalCode']='00000000';
-
-    //Ejemplo envío campos reservados en parametro reserved1.
-    $array_send['reserved1']='Valor Reservado 123';
-
-    //Parametros de Solicitud de Autorización a Enviar
-    $array_get['XMLREQ']="";
-    $array_get['DIGITALSIGN']="";
-    $array_get['SESSIONKEY']="";
-
-    //Ejecución de Creación de Valores para la Solicitud de Autorización
-    VPOSSend($array_send,$array_get,$llaveVPOSCryptoPub,$llaveComercioFirmaPriv,$vector);
-
-    // $this->display_column_left = false;
-    // $this->display_column_right = false;
+    $this->display_column_left = false;
+    $this->display_column_right = false;
 
     if(!$this->checkCurrency())
     Tools::redirect('index.php?controller=order');
