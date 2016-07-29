@@ -13,7 +13,7 @@
 
        parent::__construct();
 
-       $this->displayName = $this->l('Integracion con VPOS');
+       $this->displayName = $this->l('Tarjeta Credito/Debito');
        $this->description = $this->l('Modulo para pago electronico utilizando VPOS');
 
        $this->confirmUninstall = $this->l('Are you sure you want to uninstall?');

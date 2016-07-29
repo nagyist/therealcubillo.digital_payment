@@ -21,15 +21,9 @@ class VPOSIntegrationValidationModuleFrontController extends
 
 		$currency = $this->context->currency;
 		$total = (float)$cart->getOrderTotal(true, Cart::BOTH);
-		$extra_vars = array(
-			'{total_to_pay}' => Tools::displayPrice($total),
-			'{cheque_order}' => Configuration::get('MYMOD_CH_ORDER'),
-			'{cheque_address}' => Configuration::get('MYMOD_CH_ADDRESS'),
-			'{bankwire_details}' => Configuration::get('MYMOD_BA_DETAILS'),
-			'{bankwire_owner}' => Configuration::get('MYMOD_BA_OWNER'),
-		);
+		$extra_vars = array();
 
-		$this->module->validateOrder($cart->id, Configuration::get('PS_OS_MYMOD_PAYMENT'), $total,
+		$this->module->validateOrder($cart->id, Configuration::get('PS_OS_PREPARATION'), $total,
 			$this->module->displayName, NULL, $extra_vars, (int)$currency->id, false, $customer->secure_key);
 
 		Tools::redirect('index.php?controller=order-confirmation&id_cart='.$cart->id.'&id_module='.
