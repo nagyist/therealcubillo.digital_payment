@@ -1,33 +1,126 @@
 <?php
+include_once(dirname(__FILE__).'/vpos_plugin.php');
+
 class VPOSIntegrationValidationModuleFrontController extends
   ModuleFrontController
 {
-  public function postProcess() {
 
-		$cart = $this->context->cart;
-		if ($cart->id_customer == 0 || $cart->id_address_delivery == 0 || $cart->id_address_invoice == 0 || !$this->module->active)
-			Tools::redirect('index.php?controller=order&step=1');
+  public $ssl = true;
+  public $display_column_left = false;
 
-		$authorized = false;
-		foreach (Module::getPaymentModules() as $module)
-			if ($module['name'] == $this->module->name)
-				$authorized = true;
-		if (!$authorized)
-			die('This payment method is not available.');
+  private function afterVPOSProcess() {
 
-		$customer = new Customer($cart->id_customer);
-		if (!Validate::isLoadedObject($customer))
-			Tools::redirect('index.php?controller=order&step=1');
+    $vector = Configuration::get('VPOSI_VECTOR');
 
-		$currency = $this->context->currency;
-		$total = (float)$cart->getOrderTotal(true, Cart::BOTH);
-		$extra_vars = array();
+    $llaveVPOSFirmaPub = Configuration::get('VPOSI_SIGN_PUB_KEY');
 
-		$this->module->validateOrder($cart->id, Configuration::get('PS_OS_PREPARATION'), $total,
-			$this->module->displayName, NULL, $extra_vars, (int)$currency->id, false, $customer->secure_key);
+    $llaveComercioCryptoPriv = Configuration::get('VPOSI_ENC_PRIV_KEY');
 
-		Tools::redirect('index.php?controller=order-confirmation&id_cart='.$cart->id.'&id_module='.
-			$this->module->id.'&id_order='.$this->module->currentOrder.'&key='.$customer->secure_key);
+    $arrayIn['IDACQUIRER'] = $_POST['IDACQUIRER'];
+    $arrayIn['IDCOMMERCE'] = $_POST['IDCOMMERCE'];
+    $arrayIn['XMLRES'] = $_POST['XMLRES'];
+    $arrayIn['DIGITALSIGN'] = $_POST['DIGITALSIGN'];
+    $arrayIn['SESSIONKEY'] = $_POST['SESSIONKEY'];
+    $arrayOut = '';
+
+    //Ejecución de Creación de Valores para la Solicitud de Interpretación de la Respuesta
+    if(VPOSResponse($arrayIn,$arrayOut,$llaveVPOSFirmaPub,$llaveComercioCryptoPriv,$vector)){
+      return $arrayOut;
+    }else{
+        return "Error durante el proceso de interpretación de la respuesta. "
+        . "Verificar los componentes de seguridad: Vector Hexadecimal y Llaves.";
+    }
+  }
+
+  public function initContent() {
+    parent::initContent();
+
+    if ($_GET['action'] == 'redirect') {
+      $this->finalRedirect();
+    } else {
+
+      $result = '';
+
+      $this->setTemplate('validation.tpl');
+
+      $arrayOut = $this->afterVPOSProcess();
+
+      $extra_vars = array();
+
+      $cart = $this->context->cart;
+    		if ($cart->id_customer == 0 || $cart->id_address_delivery == 0 || $cart->id_address_invoice == 0 || !$this->module->active)
+    			Tools::redirect('index.php?controller=order&step=1');
+
+      $message = $this->authResult($arrayOut['authorizationResult']);
+
+      if (!is_array($arrayOut) || $arrayOut['authorizationResult'] != '00'){
+        $message = 'Hubo un error procesando la transaccion';
+        $result = 'error';
+      } else {
+        $result = 'success';
+        $this->module->validateOrder($cart->id, Configuration::get('PS_OS_PREPARATION'), $total,
+        			$this->module->displayName, NULL, $extra_vars, (int)$currency->id, false, $customer->secure_key);
+      }
+
+      $this->context->smarty->assign(array(
+        'message' => $message,
+        'result' => $result,
+        'redirect_link' => $this->context->link->getModuleLink('vposintegration', 'validation', array('action' => 'redirect'), true)
+      ));
+    }
+
 
   }
+
+  private function finalRedirect() {
+    Tools::redirect('index.php?controller=order-confirmation&id_cart='.$cart->id.'&id_module='.
+  			$this->module->id.'&id_order='.$this->module->currentOrder.'&key='.$customer->secure_key.'&result='.$vpos_result);
+  }
+
+  private function authResult($authCode){
+    if ($authCode == '05') {
+      return 'La transaccion fue rechazada';
+    } elseif ($authCode == '01') {
+      return 'La transaccion fue denegada';
+    } else {
+      return 'La transaccion fue exitosa';
+    }
+  }
+
+
+
+  // public function postProcess() {
+  //   $arrayOut = $this->afterVPOSProcess();
+  //
+  //   $vpos_result = 'success';
+  //
+  //   $cart = $this->context->cart;
+	// 	if ($cart->id_customer == 0 || $cart->id_address_delivery == 0 || $cart->id_address_invoice == 0 || !$this->module->active)
+	// 		Tools::redirect('index.php?controller=order&step=1');
+  //
+	// 	$authorized = false;
+	// 	foreach (Module::getPaymentModules() as $module)
+	// 		if ($module['name'] == $this->module->name)
+	// 			$authorized = true;
+	// 	if (!$authorized)
+	// 		 $vpos_result = 'error';
+  //
+  //   if (!is_array($arrayOut))
+  //     $vpos_result = 'error';
+  //
+	// 	$customer = new Customer($cart->id_customer);
+	// 	if (!Validate::isLoadedObject($customer))
+	// 		Tools::redirect('index.php?controller=order&step=1');
+  //
+	// 	$currency = $this->context->currency;
+	// 	$total = (float)$cart->getOrderTotal(true, Cart::BOTH);
+  //   $extra_vars = array();
+  //
+  //   if ($vpos_result == 'success')
+  // 		$this->module->validateOrder($cart->id, Configuration::get('PS_OS_PREPARATION'), $total,
+  // 			$this->module->displayName, NULL, $extra_vars, (int)$currency->id, false, $customer->secure_key);
+  //
+	// 	Tools::redirect('index.php?controller=order-confirmation&id_cart='.$cart->id.'&id_module='.
+	// 		$this->module->id.'&id_order='.$this->module->currentOrder.'&key='.$customer->secure_key.'&result='.$vpos_result);
+  // }
 }

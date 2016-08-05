@@ -1,4 +1,3 @@
-div#mymodule_block_home p {
-  font-size: 150%;
-  font-style:italic;
+.vposintegration-table-wrapper {
+  border: 1px solid #ccc;
 }

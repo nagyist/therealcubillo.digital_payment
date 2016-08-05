@@ -1,5 +1,6 @@
 <?php
-include("vpos_plugin.php");
+include_once(dirname(__FILE__).'/vpos_plugin.php');
+
 class VPOSIntegrationPaymentModuleFrontController extends
   ModuleFrontController
 {
@@ -74,8 +75,11 @@ class VPOSIntegrationPaymentModuleFrontController extends
 
     $array_get = $this->requestVPOSPlugin();
 
-    $this->display_column_left = false;
-    $this->display_column_right = false;
+    $acquirerId =  Configuration::get('VPOSI_ID_ACQUIRER');
+    $commerceId =  Configuration::get('VPOSI_ID_COMMERCE');
+
+    $this->context->controller->addCSS(
+      $this->_path.'views/css/vposintegration.css', 'all');
 
     if(!$this->checkCurrency())
     Tools::redirect('index.php?controller=order');
@@ -83,11 +87,9 @@ class VPOSIntegrationPaymentModuleFrontController extends
     if (count($this->context->cart->getProducts()) > 1) {
       foreach ($this->context->cart->getProducts() as $product) {
         $name = $product->$name;
-       print_r($name);
       }
     } else {
       $product = $this->context->cart->getProducts();
-      print_r($product->Sname);
     }
 
     #Cart info
@@ -98,8 +100,8 @@ class VPOSIntegrationPaymentModuleFrontController extends
       'currencies' => $this->module->getCurrency((int)$this->context->cart->id_currency),
       'total_amount' => $this->context->cart->getOrderTotal(true, Cart::BOTH),
       'path' => $this->module->getPathUri(),
-      'id_adquirer' => $array_send['acquirerId'],
-      'id_commerce' => $array_send['commerceId'],
+      'id_adquirer' => $acquirerId,
+      'id_commerce' => $commerceId,
       'xmlreq' => $array_get['XMLREQ'],
       'digitalsign' => $array_get['DIGITALSIGN'],
       'sessionkey' => $array_get['SESSIONKEY'],
