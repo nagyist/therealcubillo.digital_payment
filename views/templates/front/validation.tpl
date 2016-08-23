@@ -13,6 +13,19 @@
   {$message}
 </h4>
 
+<p>
+  {l s='EstadoAutorizacion: %s' sprintf=$auth_result mod='vposintegration'}
+</p>
+<p>
+  {l s='CodigoError: %s' sprintf=$error_code mod='vposintegration'}
+</p>
+<p>
+  {l s='MensajeError: %s' sprintf=$error_message mod='vposintegration'}
+</p>
+<p>
+  {l s='CodigoAutorizacion: %s' sprintf=$auth_code mod='vposintegration'}
+</p>
+
 {if $result eq 'error'}
   <p class="cart_navigation clearfix" id="cart_navigation">
     <a href="{$link->getPageLink('order', true, NULL, "step=3")|escape:'html'}">

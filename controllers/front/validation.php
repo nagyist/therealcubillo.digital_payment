@@ -10,11 +10,32 @@ class VPOSIntegrationValidationModuleFrontController extends
 
   private function afterVPOSProcess() {
 
-    $vector = Configuration::get('VPOSI_VECTOR');
+    $vector = "A3C716F811568313";
 
-    $llaveVPOSFirmaPub = Configuration::get('VPOSI_SIGN_PUB_KEY');
+    //Llave Firma Publica de Alignet
+    $llaveVPOSFirmaPub = "-----BEGIN PUBLIC KEY-----\n".
+    "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCvJS8zLPeePN+fbJeIvp/jjvLW\n".
+    "Aedyx8UcfS1eM/a+Vv2yHTxCLy79dEIygDVE6CTKbP1eqwsxRg2Z/dI+/e14WDRs\n".
+    "g0QzDdjVFIuXLKJ0zIgDw6kQd1ovbqpdTn4wnnvwUCNpBASitdjpTcNTKONfXMtH\n".
+    "pIs4aIDXarTYJGWlyQIDAQAB\n".
+    "-----END PUBLIC KEY-----";
 
-    $llaveComercioCryptoPriv = Configuration::get('VPOSI_ENC_PRIV_KEY');
+    //Llave Crypto Privada del Comercio
+    $llaveComercioCryptoPriv = "-----BEGIN RSA PRIVATE KEY-----\n".
+    "MIICXAIBAAKBgQDwWDRcoeu6EEWlMOQuIPzRWOwHxUn9IHFMoT4VmwyEUgis83Sj\n".
+    "Ba3nE6w84wyrp00MXEONmqyOBHDFaD3+fZXr8CbkU/BiliOBDCramikRVR2JZeSt\n".
+    "GYHAfe7FO7hjGHgjlgOc9wsTLkKkzHKz8z5Xc6ycvaFMcPP+OS86c1S2mwIDAQAB\n".
+    "AoGAWlve+8CIfkBl3rAd6VXPlulGe7lpkrfiwLuSOs87CnhI+LTi8fNNqSWVSKLX\n".
+    "/aT9a5s4boFrRE1ZFG6XeBlBBmOUkq7IDzWrWzFopssT9+aThe2hsq4mAstIJqVm\n".
+    "j7oOxDVyzhdBmP/9tBQ8nK8oWNDvEniu4x2UwwcGaJQrW7ECQQD44VLdi9WiQLkE\n".
+    "zqUQcFB3Yj4q+75fsuUEIkuEePyrG+eGWsmnetmt6brTBlyz4KJD1cxQeTLSxA3T\n".
+    "J1Ll0N6jAkEA9zhewWQFUvLjKNlQO5dUMO47H7vDiTo6f/3kJUP7FNJbKqxk3TbD\n".
+    "ht1tffDd0lUthXRCsCiB4y2oRe55TFQfqQJBAPihKQZYjshzviIWSoI8obZSN+b6\n".
+    "7XlvHyjdFfI2Z7yMuOPYyMF+kf4SlGgCYBP24kPAT0dJfMNfxqveCgu6eN8CQFAR\n".
+    "t87XAEpvVFdkmvHR/3ihkBClFZ2aeFv/9SaEsAt8Xf6iO0DSfd1uVgoWOyHmaIny\n".
+    "r66yT+8uWHPd2vd3v5ECQH0LodN1SJn4CLsNCRR+mr0y9POHrDRd+/qD+43aSNtT\n".
+    "dbMbquMxhUv0AerPIRBeE7zuxUXXD9seKIRtNuqLaqI=\n".
+    "-----END RSA PRIVATE KEY-----";
 
     $arrayIn['IDACQUIRER'] = $_POST['IDACQUIRER'];
     $arrayIn['IDCOMMERCE'] = $_POST['IDCOMMERCE'];
@@ -35,6 +56,8 @@ class VPOSIntegrationValidationModuleFrontController extends
   public function initContent() {
     parent::initContent();
 
+    $arrayOut = $this->afterVPOSProcess();
+
     if ($_GET['action'] == 'redirect') {
       $this->finalRedirect();
     } else {
@@ -43,7 +66,7 @@ class VPOSIntegrationValidationModuleFrontController extends
 
       $this->setTemplate('validation.tpl');
 
-      $arrayOut = $this->afterVPOSProcess();
+
 
       $extra_vars = array();
 
@@ -65,6 +88,10 @@ class VPOSIntegrationValidationModuleFrontController extends
       $this->context->smarty->assign(array(
         'message' => $message,
         'result' => $result,
+        'auth_code' =>  $arrayOut['authorizationCode'],
+        'auth_result' =>  $arrayOut['authorizationResult'],
+        'error_code' => $arrayOut['errorCode'],
+        'error_message' => $arrayOut['errorMessage'],
         'redirect_link' => $this->context->link->getModuleLink('vposintegration', 'validation', array('action' => 'redirect'), true)
       ));
     }

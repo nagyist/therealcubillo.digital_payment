@@ -75,6 +75,18 @@
           <textarea name="enc_pub_key">{$enc_pub_key}</textarea>
         </div>
       </div>
+      <div class="form-group clearfix">
+        <label class="col-lg-3">Llave Publica Alignet Encriptacion</label>
+        <div class="col-lg-9">
+          <textarea name="enc_ali_key">{$enc_ali_key}</textarea>
+        </div>
+      </div>
+      <div class="form-group clearfix">
+        <label class="col-lg-3">Llave Publica Alignet Firma</label>
+        <div class="col-lg-9">
+          <textarea name="sign_ali_key">{$sign_ali_key}</textarea>
+        </div>
+      </div>
       <div class="panel-footer">
         <input class="btn btn-default pull-right" type="submit" name="vpos_pago" value="Guardar">
       </div>

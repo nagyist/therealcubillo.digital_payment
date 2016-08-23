@@ -21,12 +21,13 @@ class VPOSIntegrationPaymentModuleFrontController extends
 
   private function requestVPOSPlugin() {
     //Componentes de Seguridad
-    //Vector Hexadecimal
-    $vector = Configuration::get('VPOSI_VECTOR');
+     //Vector Hexadecimal
+     $vector = Configuration::get('VPOSI_VECTOR');;
 
-    //Llave Publica Crypto de Alignet. Nota olvidar ingresar los saltos de linea detallados con el valor \n
-    $llaveVPOSCryptoPub = Configuration::get('VPOSI_ENC_PUB_KEY');
+     //Llave Publica Crypto de Alignet. Nota olvidar ingresar los saltos de linea detallados con el valor \n
+     $llaveVPOSCryptoPub = Configuration::get('VPOSI_ENC_ALI_KEY');;
 
+    //Llave Firma Privada del Comercio. Nota olvidar ingresar los saltos de linea detallados con el valor \n
     //Llave Firma Privada del Comercio. Nota olvidar ingresar los saltos de linea detallados con el valor \n
     $llaveComercioFirmaPriv = Configuration::get('VPOSI_SIGN_PRIV_KEY');
 
@@ -34,25 +35,33 @@ class VPOSIntegrationPaymentModuleFrontController extends
 
     $state = new State($address->id_state);
 
+    $total_amount =  str_replace(array('.'), array(''), $this->context->cart->getOrderTotal(true, Cart::BOTH));
+
+    $purchase_number = Configuration::get('VPOSI_PURCHASE_ID') ? Configuration::get('VPOSI_PURCHASE_ID') : 0000000;
+    Configuration::updateValue('VPOSI_PURCHASE_ID', $purchase_number + 1);
+
     //Envío de Parametros a V-POS
-    $array_send['acquirerId'] = Configuration::get('VPOSI_ID_ACQUIRER');
-    $array_send['commerceId']= Configuration::get('VPOSI_ID_COMMERCE');
-    $array_send['purchaseOperationNumber']= $this->context->cart->id;
-    $array_send['purchaseAmount'] = $this->context->cart->getOrderTotal(true, Cart::BOTH);
-    $array_send['purchaseCurrencyCode'] = $this->context->cart->id_currency;
+    $array_send['acquirerId']=Configuration::get('VPOSI_ID_ACQUIRER');;
+    $array_send['commerceId']=Configuration::get('VPOSI_ID_COMMERCE');
+    $array_send['purchaseOperationNumber']= $purchase_number;
+    $array_send['purchaseAmount']= $this->context->currency->iso_code_num == '188'? $total_amount * 100 : $total_amount;
+    $array_send['purchaseCurrencyCode']=$this->context->currency->iso_code_num;
     $array_send['commerceMallId'] = Configuration::get('VPOSI_ID_MALL');
     $array_send['language'] = 'SP';
     $array_send['billingFirstName'] = $address->firstname;
-    $array_send['billingLastName'] = $address->lastname;;
+    $array_send['billingLastName'] = $address->lastname;
     $array_send['billingEMail'] = $this->context->customer->email;
     $array_send['billingAddress'] = $address->address1.', '.$address->address2;
     $array_send['billingZIP'] = $address->postcode;
     $array_send['billingCity'] = $address->city;
     $array_send['billingState'] = $state->name;
-    $array_send['billingCountry'] = $address->country;
-    $array_send['billingPhone'] = $address->phone;
+    $array_send['billingCountry'] = $this->context->country->iso_code;;
+    $array_send['billingPhone'] = $address->phone ? $address->phone : $address->phone_mobile;
     $array_send['shippingAddress'] = $address->address1.', '.$address->address2;
     $array_send['terminalCode'] = Configuration::get('VPOSI_TERMINAL_CODE');
+
+    //Ejemplo env�o campos reservados en parametro reserved1.
+    // $array_send['reserved1']='Valor Reservado 123';
 
     //Ejemplo envío campos reservados en parametro reserved1.
     // $array_send['reserved1']='Valor Reservado 123';
@@ -75,8 +84,8 @@ class VPOSIntegrationPaymentModuleFrontController extends
 
     $array_get = $this->requestVPOSPlugin();
 
-    $acquirerId =  Configuration::get('VPOSI_ID_ACQUIRER');
-    $commerceId =  Configuration::get('VPOSI_ID_COMMERCE');
+    $acquirerId =  '99';
+    $commerceId =  '7761';
 
     $this->context->controller->addCSS(
       $this->_path.'views/css/vposintegration.css', 'all');

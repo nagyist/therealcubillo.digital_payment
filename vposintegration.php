@@ -43,7 +43,9 @@
           !Configuration::deleteByName('VPOSI_SIGN_PRIV_KEY') ||
           !Configuration::deleteByName('VPOSI_SIGN_PUB_KEY') ||
           !Configuration::deleteByName('VPOSI_ENC_PRIV_KEY') ||
-          !Configuration::deleteByName('VPOSI_ENC_PUB_KEY')
+          !Configuration::deleteByName('VPOSI_ENC_PUB_KEY') ||
+          !Configuration::deleteByName('VPOSI_ENC_ALI_KEY') ||
+          !Configuration::deleteByName('VPOSI_SIGN_ALI_KEY')
       )
         return false;
       return true;
@@ -60,6 +62,8 @@
       $sign_pub_key = Configuration::get('VPOSI_SIGN_PUB_KEY');
       $enc_priv_key = Configuration::get('VPOSI_ENC_PRIV_KEY');
       $enc_pub_key = Configuration::get('VPOSI_ENC_PUB_KEY');
+      $enc_ali_key = Configuration::get('VPOSI_ENC_ALI_KEY');
+      $sign_ali_key = Configuration::get('VPOSI_SIGN_ALI_KEY');
 
       $this->context->smarty->assign('environment', $environment);
       $this->context->smarty->assign('id_adquirer', $id_adquirer);
@@ -71,6 +75,8 @@
       $this->context->smarty->assign('sign_pub_key', $sign_pub_key);
       $this->context->smarty->assign('enc_priv_key', $enc_priv_key);
       $this->context->smarty->assign('enc_pub_key', $enc_pub_key);
+      $this->context->smarty->assign('enc_ali_key', $enc_ali_key);
+      $this->context->smarty->assign('sign_ali_key', $sign_ali_key);
     }
 
 
@@ -80,13 +86,15 @@
         $environment = Tools::getValue('environment');
         $id_adquirer = Tools::getValue('id_adquirer');
         $id_commerce = Tools::getValue('id_commerce');
-        $terminal_code = Tools::getValue('environment');
+        $terminal_code = Tools::getValue('terminal_code');
         $id_mall = Tools::getValue('id_mall');
         $vector = Tools::getValue('vector');
         $sign_priv_key = Tools::getValue('sign_priv_key');
         $sign_pub_key = Tools::getValue('sign_pub_key');
         $enc_priv_key = Tools::getValue('enc_priv_key');
         $enc_pub_key = Tools::getValue('enc_pub_key');
+        $enc_ali_key = Tools::getValue('enc_ali_key');
+        $sign_ali_key = Tools::getValue('sign_ali_key');
 
         Configuration::updateValue('VPOSI_ENVIRONMENT', $environment);
         Configuration::updateValue('VPOSI_ID_ACQUIRER', $id_adquirer);
@@ -98,6 +106,8 @@
         Configuration::updateValue('VPOSI_SIGN_PUB_KEY', $sign_pub_key);
         Configuration::updateValue('VPOSI_ENC_PRIV_KEY', $enc_priv_key);
         Configuration::updateValue('VPOSI_ENC_PUB_KEY', $enc_pub_key);
+        Configuration::updateValue('VPOSI_ENC_ALI_KEY', $enc_ali_key);
+        Configuration::updateValue('VPOSI_SIGN_ALI_KEY', $sign_ali_key);
 
         $this->context->smarty->assign('confirmation', ok);
 
