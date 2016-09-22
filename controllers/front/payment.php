@@ -60,12 +60,6 @@ class VPOSIntegrationPaymentModuleFrontController extends
     $array_send['shippingAddress'] = $address->address1.', '.$address->address2;
     $array_send['terminalCode'] = Configuration::get('VPOSI_TERMINAL_CODE');
 
-    //Ejemplo env�o campos reservados en parametro reserved1.
-    // $array_send['reserved1']='Valor Reservado 123';
-
-    //Ejemplo envío campos reservados en parametro reserved1.
-    // $array_send['reserved1']='Valor Reservado 123';
-
     //Parametros de Solicitud de Autorización a Enviar
     $array_get['XMLREQ'] = "";
     $array_get['DIGITALSIGN'] = "";
@@ -84,8 +78,11 @@ class VPOSIntegrationPaymentModuleFrontController extends
 
     $array_get = $this->requestVPOSPlugin();
 
-    $acquirerId =  '99';
-    $commerceId =  '7761';
+    $url_testing = 'https://integracion.alignetsac.com/VPOS/MM/transactionStart20.do';
+    $url_production = 'https://vpayment.verifika.com/VPOS/MM/transactionStart20.do';
+
+    $acquirerId =  Configuration::get('VPOSI_ID_ACQUIRER');;
+    $commerceId =  Configuration::get('VPOSI_ID_COMMERCE');
 
     $this->context->controller->addCSS(
       $this->_path.'views/css/vposintegration.css', 'all');
@@ -101,6 +98,8 @@ class VPOSIntegrationPaymentModuleFrontController extends
       $product = $this->context->cart->getProducts();
     }
 
+    $current_currency = new Currency((int)$this->context->cart->id_currency);
+
     #Cart info
     $this->context->smarty->assign(array(
       'nb_products' => $this->context->cart->nbProducts(),
@@ -114,6 +113,8 @@ class VPOSIntegrationPaymentModuleFrontController extends
       'xmlreq' => $array_get['XMLREQ'],
       'digitalsign' => $array_get['DIGITALSIGN'],
       'sessionkey' => $array_get['SESSIONKEY'],
+      'vpos_url' => Configuration::get('VPOSI_ENVIRONMENT') == 0 ? $url_testing : $url_production,
+      'currency_iso' => $current_currency->sign
     ));
   }
 
